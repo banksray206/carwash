@@ -8,6 +8,7 @@ import React, { useState, useEffect } from "react";
   - Detailed records, staff totals, and per-service quantities per staff
   - LocalStorage persistence
   - Clear data and Export CSV (fixed newline bug)
+  - Enhanced with modern, colorful, user-friendly UI
 */
 
 const translations = {
@@ -121,6 +122,119 @@ function upsertRecordList(list, entry) {
   return safeList;
 }
 
+// --- Modern Colorful Styles ---
+const COLORS = {
+  primary: "#1976d2",
+  secondary: "#43a047",
+  accent: "#ffb300",
+  danger: "#e53935",
+  bg: "#f5f7fa",
+  card: "#fff",
+  border: "#e0e0e0",
+  text: "#222",
+  tableHeader: "#1976d2",
+  tableHeaderText: "#fff"
+};
+
+const shadow = "0 2px 8px rgba(0,0,0,0.07)";
+
+function Card({ children, style }) {
+  return (
+    <div
+      style={{
+        background: COLORS.card,
+        borderRadius: 12,
+        boxShadow: shadow,
+        padding: 18,
+        marginBottom: 18,
+        border: `1px solid ${COLORS.border}`,
+        ...style
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function Pill({ color, children, style }) {
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        background: color || COLORS.primary,
+        color: "#fff",
+        borderRadius: 16,
+        padding: "2px 12px",
+        fontSize: 13,
+        marginRight: 4,
+        marginLeft: 4,
+        ...style
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function IconBtn({ children, color, ...props }) {
+  return (
+    <button
+      {...props}
+      style={{
+        background: color || COLORS.primary,
+        color: "#fff",
+        border: "none",
+        borderRadius: 6,
+        cursor: "pointer",
+        padding: "6px 14px",
+        fontWeight: 600,
+        fontSize: 15,
+        transition: "background 0.2s",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
+        ...props.style
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Input({ ...props }) {
+  return (
+    <input
+      {...props}
+      style={{
+        border: `1px solid ${COLORS.border}`,
+        borderRadius: 6,
+        padding: "7px 10px",
+        fontSize: 15,
+        outline: "none",
+        background: "#fafbfc",
+        marginBottom: 0,
+        ...props.style
+      }}
+    />
+  );
+}
+
+function Select({ children, ...props }) {
+  return (
+    <select
+      {...props}
+      style={{
+        border: `1px solid ${COLORS.border}`,
+        borderRadius: 6,
+        padding: "7px 10px",
+        fontSize: 15,
+        background: "#fafbfc",
+        ...props.style
+      }}
+    >
+      {children}
+    </select>
+  );
+}
+
 export default function DailySalesApp() {
   const [lang, setLang] = useState("ar");
   const t = translations[lang];
@@ -194,35 +308,37 @@ export default function DailySalesApp() {
 
   // Staff list with remove button
   const staffListWithRemove = (
-    <div style={{ margin: "12px 0", display: "flex", flexWrap: "wrap", gap: 8 }}>
+    <div style={{ margin: "12px 0", display: "flex", flexWrap: "wrap", gap: 10 }}>
       {staffList.map(s => (
         <span
           key={s}
           style={{
-            border: "1px solid #ccc",
-            borderRadius: 4,
-            padding: "4px 8px",
+            border: `1.5px solid ${COLORS.primary}`,
+            borderRadius: 20,
+            padding: "4px 12px",
             display: "flex",
             alignItems: "center",
-            gap: 4
+            gap: 6,
+            background: "#e3f2fd",
+            fontWeight: 500,
+            marginBottom: 4
           }}
         >
-          {s}
-          <button
+          <span style={{ color: COLORS.primary }}>{s}</span>
+          <IconBtn
             onClick={() => removeStaff(s)}
+            color={COLORS.danger}
             style={{
               marginLeft: 4,
-              background: "#f44336",
-              color: "#fff",
-              border: "none",
-              borderRadius: 2,
-              cursor: "pointer",
-              padding: "2px 6px"
+              padding: "2px 8px",
+              fontSize: 13,
+              borderRadius: 12,
+              boxShadow: "none"
             }}
             title={lang === "ar" ? "حذف الموظف" : "Remove staff"}
           >
-            {t.remove}
-          </button>
+            ×
+          </IconBtn>
         </span>
       ))}
     </div>
@@ -283,191 +399,298 @@ export default function DailySalesApp() {
   const dir = lang === "ar" ? "rtl" : "ltr";
   const align = lang === "ar" ? "right" : "left";
 
+  // --- Table Styles ---
+  const tableStyle = {
+    width: "100%",
+    borderCollapse: "separate",
+    borderSpacing: 0,
+    marginBottom: 12,
+    background: "#fff",
+    borderRadius: 10,
+    overflow: "hidden",
+    boxShadow: shadow
+  };
+  const thStyle = {
+    background: COLORS.tableHeader,
+    color: COLORS.tableHeaderText,
+    padding: 10,
+    fontWeight: 700,
+    fontSize: 15,
+    border: "none"
+  };
+  const tdStyle = {
+    padding: 10,
+    fontSize: 15,
+    borderBottom: `1px solid ${COLORS.border}`,
+    textAlign: align
+  };
+
   return (
-    <div style={{ direction: dir, padding: 18, fontFamily: "sans-serif" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <h2 style={{ margin: 0 }}>{t.title}</h2>
-        <div>
-          <button onClick={() => setLang(l => (l === "ar" ? "en" : "ar"))} style={{ marginLeft: 8 }}>
-            {t.langToggle}
-          </button>
-          <button onClick={exportCSV} style={{ marginLeft: 8 }}>
-            {t.exportCSV}
-          </button>
-        </div>
-      </div>
-
-      {/* Staff Management Section */}
-      <div style={{ marginBottom: 12 }}>
-        <h3>{lang === "ar" ? "إدارة الموظفين" : "Staff Management"}</h3>
-        {staffListWithRemove}
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <input placeholder={t.addStaff} value={newStaff} onChange={e => setNewStaff(e.target.value)} />
-          <button onClick={addStaff}>{t.addStaff}</button>
-        </div>
-      </div>
-
-      {/* Record Entry Section */}
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}>
-        <label style={{ display: "flex", flexDirection: "column", alignItems: align }}>
-          {t.date}
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} />
-        </label>
-
-        <label style={{ display: "flex", flexDirection: "column", alignItems: align }}>
-          {t.staff}
-          <select value={staffName} onChange={e => setStaffName(e.target.value)}>
-            {staffList.map(s => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label style={{ display: "flex", flexDirection: "column", alignItems: align }}>
-          {t.service}
-          <select value={serviceType} onChange={e => setServiceType(e.target.value)}>
-            {Object.keys(SERVICES).map(s => (
-              <option key={s} value={s}>
-                {t[s] || s}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {["whole", "outside", "coupon"].includes(serviceType) ? (
-          <label style={{ display: "flex", flexDirection: "column", alignItems: align }}>
-            {t.size}
-            <select value={size} onChange={e => setSize(e.target.value)}>
-              <option value="small">{t.small}</option>
-              <option value="medium">{t.medium}</option>
-              <option value="big">{t.big}</option>
-            </select>
-          </label>
-        ) : (
-          <label style={{ display: "flex", flexDirection: "column", alignItems: align }}>
-            {t.size}
-            <select value={size} onChange={e => setSize(e.target.value)}>
-              <option value="any">-</option>
-            </select>
-          </label>
-        )}
-
-        <label style={{ display: "flex", flexDirection: "column", alignItems: align }}>
-          {t.quantity}
-          <input type="number" min="1" value={quantity} onChange={e => setQuantity(e.target.value)} style={{ width: 80 }} />
-        </label>
-
-        <div>
-          <button onClick={handleAddRecord} style={{ padding: "8px 12px" }}>
-            {t.add}
-          </button>
+    <div
+      style={{
+        direction: dir,
+        padding: 0,
+        fontFamily: "Segoe UI, Tahoma, Geneva, Verdana, sans-serif",
+        background: COLORS.bg,
+        minHeight: "100vh"
+      }}
+    >
+      <style>{`
+        ::selection { background: ${COLORS.accent}33; }
+        input:focus, select:focus { border-color: ${COLORS.primary}; box-shadow: 0 0 0 2px ${COLORS.primary}22; }
+        button:active { filter: brightness(0.95); }
+        @media (max-width: 700px) {
+          .flex-row { flex-direction: column !important; gap: 18px !important; }
+        }
+      `}</style>
+      <div style={{ maxWidth: 950, margin: "0 auto", padding: 24 }}>
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 18
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              color: COLORS.primary,
+              fontWeight: 800,
+              letterSpacing: 1,
+              fontSize: 28
+            }}
+          >
+            <span role="img" aria-label="car" style={{ marginRight: 8, fontSize: 30 }}>
+              🚗
+            </span>
+            {t.title}
+          </h2>
+          <div style={{ display: "flex", gap: 10 }}>
+            <IconBtn
+              onClick={() => setLang(l => (l === "ar" ? "en" : "ar"))}
+              color={COLORS.accent}
+            >
+              {t.langToggle}
+            </IconBtn>
+            <IconBtn onClick={exportCSV} color={COLORS.secondary}>
+              {t.exportCSV}
+            </IconBtn>
+          </div>
         </div>
 
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-          <button onClick={clearData} style={{ background: "#f44336", color: "#fff" }}>
-            {t.clearData}
-          </button>
-        </div>
-      </div>
+        {/* Staff Management Section */}
+        <Card>
+          <h3 style={{ color: COLORS.secondary, marginTop: 0 }}>
+            <span role="img" aria-label="staff">👥</span>{" "}
+            {lang === "ar" ? "إدارة الموظفين" : "Staff Management"}
+          </h3>
+          {staffListWithRemove}
+          <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+            <Input
+              placeholder={t.addStaff}
+              value={newStaff}
+              onChange={e => setNewStaff(e.target.value)}
+              style={{ width: 180 }}
+            />
+            <IconBtn onClick={addStaff} color={COLORS.primary}>
+              {t.addStaff}
+            </IconBtn>
+          </div>
+        </Card>
 
-      {/* Summary Tables */}
-      <h3>{t.summary}</h3>
-      <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 12 }} border="1">
-        <thead>
-          <tr>
-            <th style={{ padding: 6 }}>{t.staff}</th>
-            <th style={{ padding: 6 }}>{t.quantity}</th>
-            <th style={{ padding: 6 }}>{t.totalSales}</th>
-            <th style={{ padding: 6 }}>{t.totalPay}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {staffSummary.map(s => (
-            <tr key={s.name}>
-              <td style={{ padding: 6 }}>{s.name}</td>
-              <td style={{ padding: 6, textAlign: "right" }}>{s.totalQuantity}</td>
-              <td style={{ padding: 6, textAlign: "right" }}>{s.totalSales}</td>
-              <td style={{ padding: 6, textAlign: "right" }}>{s.totalPay}</td>
-            </tr>
-          ))}
-          {staffSummary.length === 0 && (
-            <tr>
-              <td colSpan={4} style={{ padding: 6, textAlign: "center" }}>
-                {lang === "ar" ? "لا توجد بيانات" : "No data"}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+        {/* Record Entry Section */}
+        <Card>
+          <div className="flex-row" style={{ display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" }}>
+            <label style={{ display: "flex", flexDirection: "column", alignItems: align, minWidth: 120 }}>
+              <span style={{ fontWeight: 600, color: COLORS.primary }}>{t.date}</span>
+              <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+            </label>
 
-      <h3>{t.serviceSummary}</h3>
-      <table style={{ width: "100%", borderCollapse: "collapse" }} border="1">
-        <thead>
-          <tr>
-            <th style={{ padding: 6 }}>{t.staff}</th>
-            <th style={{ padding: 6 }}>{t.service}</th>
-            <th style={{ padding: 6 }}>{t.size}</th>
-            <th style={{ padding: 6 }}>{t.quantity}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {serviceSummary.map(s =>
-            Object.entries(s.summary).map(([serviceKey, qty]) => {
-              const [svc, sz] = serviceKey.includes("-") ? serviceKey.split("-") : [serviceKey, "any"];
-              return (
-                <tr key={`${s.name}-${serviceKey}`}>
-                  <td style={{ padding: 6 }}>{s.name}</td>
-                  <td style={{ padding: 6 }}>{t[svc] || svc}</td>
-                  <td style={{ padding: 6 }}>{sz === "any" ? "-" : t[sz] || sz}</td>
-                  <td style={{ padding: 6, textAlign: "right" }}>{qty}</td>
+            <label style={{ display: "flex", flexDirection: "column", alignItems: align, minWidth: 120 }}>
+              <span style={{ fontWeight: 600, color: COLORS.primary }}>{t.staff}</span>
+              <Select value={staffName} onChange={e => setStaffName(e.target.value)}>
+                {staffList.map(s => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </Select>
+            </label>
+
+            <label style={{ display: "flex", flexDirection: "column", alignItems: align, minWidth: 120 }}>
+              <span style={{ fontWeight: 600, color: COLORS.primary }}>{t.service}</span>
+              <Select value={serviceType} onChange={e => setServiceType(e.target.value)}>
+                {Object.keys(SERVICES).map(s => (
+                  <option key={s} value={s}>
+                    {t[s] || s}
+                  </option>
+                ))}
+              </Select>
+            </label>
+
+            {["whole", "outside", "coupon"].includes(serviceType) ? (
+              <label style={{ display: "flex", flexDirection: "column", alignItems: align, minWidth: 120 }}>
+                <span style={{ fontWeight: 600, color: COLORS.primary }}>{t.size}</span>
+                <Select value={size} onChange={e => setSize(e.target.value)}>
+                  <option value="small">{t.small}</option>
+                  <option value="medium">{t.medium}</option>
+                  <option value="big">{t.big}</option>
+                </Select>
+              </label>
+            ) : (
+              <label style={{ display: "flex", flexDirection: "column", alignItems: align, minWidth: 120 }}>
+                <span style={{ fontWeight: 600, color: COLORS.primary }}>{t.size}</span>
+                <Select value={size} onChange={e => setSize(e.target.value)}>
+                  <option value="any">-</option>
+                </Select>
+              </label>
+            )}
+
+            <label style={{ display: "flex", flexDirection: "column", alignItems: align, minWidth: 100 }}>
+              <span style={{ fontWeight: 600, color: COLORS.primary }}>{t.quantity}</span>
+              <Input
+                type="number"
+                min="1"
+                value={quantity}
+                onChange={e => setQuantity(e.target.value)}
+                style={{ width: 80 }}
+              />
+            </label>
+
+            <div>
+              <IconBtn onClick={handleAddRecord} color={COLORS.secondary} style={{ padding: "10px 18px" }}>
+                <span role="img" aria-label="add">➕</span> {t.add}
+              </IconBtn>
+            </div>
+
+            <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+              <IconBtn onClick={clearData} color={COLORS.danger}>
+                <span role="img" aria-label="clear">🗑️</span> {t.clearData}
+              </IconBtn>
+            </div>
+          </div>
+        </Card>
+
+        {/* Summary Tables */}
+        <Card>
+          <h3 style={{ color: COLORS.primary, marginTop: 0 }}>
+            <span role="img" aria-label="summary">📊</span> {t.summary}
+          </h3>
+          <table style={tableStyle}>
+            <thead>
+              <tr>
+                <th style={thStyle}>{t.staff}</th>
+                <th style={thStyle}>{t.quantity}</th>
+                <th style={thStyle}>{t.totalSales}</th>
+                <th style={thStyle}>{t.totalPay}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {staffSummary.map(s => (
+                <tr key={s.name}>
+                  <td style={tdStyle}>{s.name}</td>
+                  <td style={{ ...tdStyle, textAlign: "center" }}>
+                    <Pill color={COLORS.secondary}>{s.totalQuantity}</Pill>
+                  </td>
+                  <td style={{ ...tdStyle, textAlign: "center" }}>
+                    <Pill color={COLORS.primary}>{s.totalSales}</Pill>
+                  </td>
+                  <td style={{ ...tdStyle, textAlign: "center" }}>
+                    <Pill color={COLORS.accent}>{s.totalPay}</Pill>
+                  </td>
                 </tr>
-              );
-            })
-          )}
-          {serviceSummary.length === 0 && (
-            <tr>
-              <td colSpan={4} style={{ padding: 6, textAlign: "center" }}>
-                {lang === "ar" ? "لا توجد بيانات" : "No data"}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+              ))}
+              {staffSummary.length === 0 && (
+                <tr>
+                  <td colSpan={4} style={{ ...tdStyle, textAlign: "center" }}>
+                    {lang === "ar" ? "لا توجد بيانات" : "No data"}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </Card>
 
-      <h3 style={{ marginTop: 18 }}>
-        {lang === "ar" ? "السجلات التفصيلية" : "Detailed Records"}
-      </h3>
-      <table style={{ width: "100%", borderCollapse: "collapse" }} border="1">
-        <thead>
-          <tr>
-            <th style={{ padding: 6 }}>{t.date}</th>
-            <th style={{ padding: 6 }}>{t.staff}</th>
-            <th style={{ padding: 6 }}>{t.service}</th>
-            <th style={{ padding: 6 }}>{t.size}</th>
-            <th style={{ padding: 6 }}>{t.quantity}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filtered.map((r, i) => (
-            <tr key={i}>
-              <td style={{ padding: 6 }}>{r.date}</td>
-              <td style={{ padding: 6 }}>{r.staffName}</td>
-              <td style={{ padding: 6 }}>{t[r.serviceType] || r.serviceType}</td>
-              <td style={{ padding: 6 }}>{r.size === "any" ? "-" : t[r.size] || r.size}</td>
-              <td style={{ padding: 6, textAlign: "right" }}>{r.quantity}</td>
-            </tr>
-          ))}
-          {filtered.length === 0 && (
-            <tr>
-              <td colSpan={5} style={{ padding: 6, textAlign: "center" }}>
-                {lang === "ar" ? "لا توجد بيانات" : "No data"}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+        <Card>
+          <h3 style={{ color: COLORS.primary, marginTop: 0 }}>
+            <span role="img" aria-label="service">🧽</span> {t.serviceSummary}
+          </h3>
+          <table style={tableStyle}>
+            <thead>
+              <tr>
+                <th style={thStyle}>{t.staff}</th>
+                <th style={thStyle}>{t.service}</th>
+                <th style={thStyle}>{t.size}</th>
+                <th style={thStyle}>{t.quantity}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {serviceSummary.map(s =>
+                Object.entries(s.summary).map(([serviceKey, qty]) => {
+                  const [svc, sz] = serviceKey.includes("-") ? serviceKey.split("-") : [serviceKey, "any"];
+                  return (
+                    <tr key={`${s.name}-${serviceKey}`}>
+                      <td style={tdStyle}>{s.name}</td>
+                      <td style={tdStyle}>{t[svc] || svc}</td>
+                      <td style={tdStyle}>{sz === "any" ? "-" : t[sz] || sz}</td>
+                      <td style={{ ...tdStyle, textAlign: "center" }}>
+                        <Pill color={COLORS.secondary}>{qty}</Pill>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+              {serviceSummary.length === 0 && (
+                <tr>
+                  <td colSpan={4} style={{ ...tdStyle, textAlign: "center" }}>
+                    {lang === "ar" ? "لا توجد بيانات" : "No data"}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </Card>
+
+        <Card style={{ marginBottom: 0 }}>
+          <h3 style={{ color: COLORS.primary, marginTop: 0 }}>
+            <span role="img" aria-label="details">📋</span>{" "}
+            {lang === "ar" ? "السجلات التفصيلية" : "Detailed Records"}
+          </h3>
+          <table style={tableStyle}>
+            <thead>
+              <tr>
+                <th style={thStyle}>{t.date}</th>
+                <th style={thStyle}>{t.staff}</th>
+                <th style={thStyle}>{t.service}</th>
+                <th style={thStyle}>{t.size}</th>
+                <th style={thStyle}>{t.quantity}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r, i) => (
+                <tr key={i}>
+                  <td style={tdStyle}>{r.date}</td>
+                  <td style={tdStyle}>{r.staffName}</td>
+                  <td style={tdStyle}>{t[r.serviceType] || r.serviceType}</td>
+                  <td style={tdStyle}>{r.size === "any" ? "-" : t[r.size] || r.size}</td>
+                  <td style={{ ...tdStyle, textAlign: "center" }}>
+                    <Pill color={COLORS.primary}>{r.quantity}</Pill>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={5} style={{ ...tdStyle, textAlign: "center" }}>
+                    {lang === "ar" ? "لا توجد بيانات" : "No data"}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </Card>
+      </div>
     </div>
   );
 }
